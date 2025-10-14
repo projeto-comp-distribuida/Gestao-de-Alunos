@@ -279,22 +279,15 @@ public class StudentService {
                 .email(request.getEmail())
                 .phone(request.getPhone())
                 .birthDate(request.getBirthDate())
+                .registrationNumber(request.getRegistrationNumber())
                 .course(request.getCourse())
                 .semester(request.getSemester())
                 .enrollmentDate(request.getEnrollmentDate())
                 .status(request.getStatus() != null ? request.getStatus() : StudentStatus.ACTIVE)
-                .addressStreet(request.getAddressStreet())
-                .addressNumber(request.getAddressNumber())
-                .addressComplement(request.getAddressComplement())
-                .addressNeighborhood(request.getAddressNeighborhood())
-                .addressCity(request.getAddressCity())
-                .addressState(request.getAddressState())
-                .addressZipcode(request.getAddressZipcode())
-                .emergencyContactName(request.getEmergencyContactName())
-                .emergencyContactPhone(request.getEmergencyContactPhone())
-                .emergencyContactRelationship(request.getEmergencyContactRelationship())
                 .notes(request.getNotes())
                 .build();
+        // Nota: Endereços, responsáveis, contatos de emergência, etc
+        // devem ser adicionados via endpoints específicos após a criação
     }
 
     private void updateStudentFields(Student student, StudentRequestDTO request) {
@@ -307,16 +300,7 @@ public class StudentService {
         student.setSemester(request.getSemester());
         student.setEnrollmentDate(request.getEnrollmentDate());
         student.setStatus(request.getStatus());
-        student.setAddressStreet(request.getAddressStreet());
-        student.setAddressNumber(request.getAddressNumber());
-        student.setAddressComplement(request.getAddressComplement());
-        student.setAddressNeighborhood(request.getAddressNeighborhood());
-        student.setAddressCity(request.getAddressCity());
-        student.setAddressState(request.getAddressState());
-        student.setAddressZipcode(request.getAddressZipcode());
-        student.setEmergencyContactName(request.getEmergencyContactName());
-        student.setEmergencyContactPhone(request.getEmergencyContactPhone());
-        student.setEmergencyContactRelationship(request.getEmergencyContactRelationship());
+        // Nota: Endereços e contatos são gerenciados via endpoints específicos
         student.setNotes(request.getNotes());
     }
 

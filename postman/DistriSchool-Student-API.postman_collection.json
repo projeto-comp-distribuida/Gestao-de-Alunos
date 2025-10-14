@@ -1,0 +1,800 @@
+{
+  "info": {
+    "name": "DistriSchool - Student Management API",
+    "description": "Coleção completa de testes para o serviço de gestão de alunos do DistriSchool.\n\n**Funcionalidades:**\n- CRUD completo de estudantes\n- Validações\n- Busca e filtros\n- Estatísticas\n- Testes de erro\n\n**Autor:** DistriSchool Team\n**Versão:** 1.0.0",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "student_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "registration_number",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "🏥 Health Check",
+      "item": [
+        {
+          "name": "Health Check",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Response has success field\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('success');",
+                  "    pm.expect(jsonData.success).to.be.true;",
+                  "});",
+                  "",
+                  "pm.test(\"Service is UP\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.data.status).to.eql('UP');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/health",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "health"]
+            },
+            "description": "Verifica se o serviço está funcionando corretamente"
+          },
+          "response": []
+        }
+      ],
+      "description": "Endpoints de verificação de saúde do serviço"
+    },
+    {
+      "name": "📝 CRUD - Students",
+      "item": [
+        {
+          "name": "1. Criar Estudante - Completo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 201\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test(\"Response contains student ID\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.data).to.have.property('id');",
+                  "    pm.collectionVariables.set(\"student_id\", jsonData.data.id);",
+                  "    pm.collectionVariables.set(\"registration_number\", jsonData.data.registrationNumber);",
+                  "});",
+                  "",
+                  "pm.test(\"Student has correct data\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.data.fullName).to.eql(\"Maria Oliveira Santos\");",
+                  "    pm.expect(jsonData.data.email).to.eql(\"maria.oliveira@example.com\");",
+                  "    pm.expect(jsonData.data.status).to.eql(\"ACTIVE\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Maria Oliveira Santos\",\n  \"cpf\": \"98765432100\",\n  \"email\": \"maria.oliveira@example.com\",\n  \"phone\": \"21987654321\",\n  \"birthDate\": \"1999-03-20\",\n  \"registrationNumber\": \"2025001\",\n  \"course\": \"Ciência da Computação\",\n  \"semester\": 3,\n  \"enrollmentDate\": \"2024-02-01\",\n  \"notes\": \"Bolsista integral PROUNI\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/students",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "students"]
+            },
+            "description": "Cria um novo estudante com todos os campos preenchidos"
+          },
+          "response": []
+        },
+        {
+          "name": "2. Criar Estudante - Engenharia",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 201\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test(\"Registration number was generated\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.data.registrationNumber).to.match(/^\\d{12}$/);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Pedro Henrique Costa\",\n  \"cpf\": \"11122233344\",\n  \"email\": \"pedro.costa@example.com\",\n  \"phone\": \"11976543210\",\n  \"birthDate\": \"2001-07-10\",\n  \"registrationNumber\": \"2025002\",\n  \"course\": \"Engenharia Elétrica\",\n  \"semester\": 6,\n  \"enrollmentDate\": \"2022-08-01\",\n  \"notes\": \"Monitor de Circuitos Elétricos\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/students",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "students"]
+            },
+            "description": "Cria estudante de Engenharia"
+          },
+          "response": []
+        },
+        {
+          "name": "3. Criar Estudante - Administração",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Ana Paula Fernandes\",\n  \"cpf\": \"55566677788\",\n  \"email\": \"ana.fernandes@example.com\",\n  \"phone\": \"85988776655\",\n  \"birthDate\": \"2000-11-15\",\n  \"registrationNumber\": \"2025003\",\n  \"course\": \"Administração\",\n  \"semester\": 4,\n  \"enrollmentDate\": \"2023-02-01\",\n  \"notes\": \"Presidente do Centro Acadêmico\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/students",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "students"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "4. Listar Todos os Estudantes",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Response is paginated\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.data).to.have.property('content');",
+                  "    pm.expect(jsonData.data).to.have.property('totalElements');",
+                  "    pm.expect(jsonData.data).to.have.property('totalPages');",
+                  "});",
+                  "",
+                  "pm.test(\"Has students\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.data.content.length).to.be.greaterThan(0);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/students?page=0&size=20&sort=id,asc",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "students"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "20"
+                },
+                {
+                  "key": "sort",
+                  "value": "id,asc"
+                }
+              ]
+            },
+            "description": "Lista todos os estudantes com paginação"
+          },
+          "response": []
+        },
+        {
+          "name": "5. Buscar Estudante por ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Student data is complete\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.data).to.have.property('id');",
+                  "    pm.expect(jsonData.data).to.have.property('fullName');",
+                  "    pm.expect(jsonData.data).to.have.property('email');",
+                  "    pm.expect(jsonData.data).to.have.property('course');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/students/{{student_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "students", "{{student_id}}"]
+            },
+            "description": "Busca um estudante específico por ID"
+          },
+          "response": []
+        },
+        {
+          "name": "6. Atualizar Estudante",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Student was updated\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.data.semester).to.eql(4);",
+                  "    pm.expect(jsonData.data.phone).to.eql(\"21999887766\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Maria Oliveira Santos\",\n  \"cpf\": \"98765432100\",\n  \"email\": \"maria.oliveira@example.com\",\n  \"phone\": \"21999887766\",\n  \"birthDate\": \"1999-03-20\",\n  \"registrationNumber\": \"2025001\",\n  \"course\": \"Ciência da Computação\",\n  \"semester\": 4,\n  \"enrollmentDate\": \"2024-02-01\",\n  \"notes\": \"Bolsista integral PROUNI - Atualizado semestre\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/students/{{student_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "students", "{{student_id}}"]
+            },
+            "description": "Atualiza dados de um estudante existente"
+          },
+          "response": []
+        },
+        {
+          "name": "7. Deletar Estudante (Soft Delete)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Success message\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.success).to.be.true;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/students/{{student_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "students", "{{student_id}}"]
+            },
+            "description": "Remove um estudante (soft delete)"
+          },
+          "response": []
+        }
+      ],
+      "description": "Operações CRUD completas para gerenciamento de estudantes"
+    },
+    {
+      "name": "🔍 Busca e Filtros",
+      "item": [
+        {
+          "name": "Buscar por Nome",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Results contain search term\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    if (jsonData.data.content.length > 0) {",
+                  "        pm.expect(jsonData.data.content[0].fullName.toLowerCase()).to.include('maria');",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/students/search?query=Maria",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "students", "search"],
+              "query": [
+                {
+                  "key": "query",
+                  "value": "Maria"
+                }
+              ]
+            },
+            "description": "Busca estudantes por nome (parcial ou completo)"
+          },
+          "response": []
+        },
+        {
+          "name": "Buscar por Email",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/students/email/maria.oliveira@example.com",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "students", "email", "maria.oliveira@example.com"]
+            },
+            "description": "Busca estudante por email exato"
+          },
+          "response": []
+        },
+        {
+          "name": "Buscar por Matrícula",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/students/registration/{{registration_number}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "students", "registration", "{{registration_number}}"]
+            },
+            "description": "Busca estudante por número de matrícula"
+          },
+          "response": []
+        },
+        {
+          "name": "Buscar por Curso",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/students/course/Ciência da Computação?page=0&size=10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "students", "course", "Ciência da Computação"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Lista estudantes de um curso específico"
+          },
+          "response": []
+        },
+        {
+          "name": "Buscar por Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/students/status/ACTIVE?page=0&size=20",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "students", "status", "ACTIVE"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "20"
+                }
+              ]
+            },
+            "description": "Filtra estudantes por status (ACTIVE, INACTIVE, SUSPENDED, GRADUATED)"
+          },
+          "response": []
+        }
+      ],
+      "description": "Endpoints de busca e filtros avançados"
+    },
+    {
+      "name": "📊 Estatísticas",
+      "item": [
+        {
+          "name": "Estatísticas Gerais",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Has statistics data\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.data).to.have.property('totalStudents');",
+                  "    pm.expect(jsonData.data).to.have.property('activeStudents');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/students/stats",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "students", "stats"]
+            },
+            "description": "Retorna estatísticas gerais dos estudantes"
+          },
+          "response": []
+        },
+        {
+          "name": "Estatísticas por Curso",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/students/stats/by-course",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "students", "stats", "by-course"]
+            },
+            "description": "Estatísticas agrupadas por curso"
+          },
+          "response": []
+        },
+        {
+          "name": "Contar Estudantes",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/students/count",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "students", "count"]
+            },
+            "description": "Retorna apenas o total de estudantes"
+          },
+          "response": []
+        }
+      ],
+      "description": "Endpoints de estatísticas e métricas"
+    },
+    {
+      "name": "❌ Testes de Validação",
+      "item": [
+        {
+          "name": "Criar Estudante - CPF Inválido",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 400\", function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test(\"Error message about CPF\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.success).to.be.false;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Teste Validação\",\n  \"cpf\": \"123\",\n  \"email\": \"teste@example.com\",\n  \"phone\": \"11987654321\",\n  \"birthDate\": \"2000-01-01\",\n  \"registrationNumber\": \"2025999\",\n  \"course\": \"Teste\",\n  \"semester\": 1,\n  \"enrollmentDate\": \"2024-01-01\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/students",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "students"]
+            },
+            "description": "Testa validação de CPF inválido"
+          },
+          "response": []
+        },
+        {
+          "name": "Criar Estudante - Email Inválido",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 400\", function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Teste Email\",\n  \"cpf\": \"12345678901\",\n  \"email\": \"email-invalido\",\n  \"phone\": \"11987654321\",\n  \"birthDate\": \"2000-01-01\",\n  \"registrationNumber\": \"2025998\",\n  \"course\": \"Teste\",\n  \"semester\": 1,\n  \"enrollmentDate\": \"2024-01-01\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/students",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "students"]
+            },
+            "description": "Testa validação de email inválido"
+          },
+          "response": []
+        },
+        {
+          "name": "Criar Estudante - Campos Obrigatórios Vazios",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 400\", function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test(\"Multiple validation errors\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.data).to.be.an('object');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"\",\n  \"cpf\": \"\",\n  \"email\": \"\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/students",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "students"]
+            },
+            "description": "Testa múltiplas validações de campos obrigatórios"
+          },
+          "response": []
+        },
+        {
+          "name": "Buscar Estudante - ID Inexistente",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 404\", function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/students/99999",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "students", "99999"]
+            },
+            "description": "Testa busca de estudante inexistente"
+          },
+          "response": []
+        },
+        {
+          "name": "Criar Estudante - CPF Duplicado",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 400\", function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Teste Duplicado\",\n  \"cpf\": \"98765432100\",\n  \"email\": \"outro.email@example.com\",\n  \"phone\": \"11987654321\",\n  \"birthDate\": \"2000-01-01\",\n  \"registrationNumber\": \"2025997\",\n  \"course\": \"Teste\",\n  \"semester\": 1,\n  \"enrollmentDate\": \"2024-01-01\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/students",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "students"]
+            },
+            "description": "Testa criação com CPF já existente"
+          },
+          "response": []
+        }
+      ],
+      "description": "Testes de validação e casos de erro"
+    },
+    {
+      "name": "🔄 Operações em Lote",
+      "item": [
+        {
+          "name": "Criar Múltiplos Estudantes - Lote 1",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Carlos Eduardo Lima\",\n  \"cpf\": \"11111111111\",\n  \"email\": \"carlos.lima@example.com\",\n  \"phone\": \"11911111111\",\n  \"birthDate\": \"1998-01-15\",\n  \"registrationNumber\": \"2025010\",\n  \"course\": \"Direito\",\n  \"semester\": 8,\n  \"enrollmentDate\": \"2021-02-01\",\n  \"notes\": \"Formando 2025\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/students",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "students"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Criar Múltiplos Estudantes - Lote 2",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Juliana Santos Rodrigues\",\n  \"cpf\": \"22222222222\",\n  \"email\": \"juliana.rodrigues@example.com\",\n  \"phone\": \"21922222222\",\n  \"birthDate\": \"2002-05-22\",\n  \"registrationNumber\": \"2025011\",\n  \"course\": \"Medicina\",\n  \"semester\": 2,\n  \"enrollmentDate\": \"2024-02-01\",\n  \"notes\": \"Intercâmbio aprovado\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/students",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "students"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Criar Múltiplos Estudantes - Lote 3",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Roberto Alves Pereira\",\n  \"cpf\": \"33333333333\",\n  \"email\": \"roberto.pereira@example.com\",\n  \"phone\": \"85933333333\",\n  \"birthDate\": \"1997-12-10\",\n  \"registrationNumber\": \"2025012\",\n  \"course\": \"Arquitetura\",\n  \"semester\": 10,\n  \"enrollmentDate\": \"2020-08-01\",\n  \"notes\": \"TCC em andamento\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/students",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "students"]
+            }
+          },
+          "response": []
+        }
+      ],
+      "description": "Criação de múltiplos estudantes para testes de volume"
+    }
+  ]
+}
+

@@ -49,6 +49,41 @@ public class StudentResponseDTO {
     private String updatedBy;
 
     public static StudentResponseDTO fromEntity(Student student) {
+        // Mapeia endereço do relacionamento Address
+        // TODO: Habilitar quando Lombok estiver gerando os getters corretamente
+        String addrStreet = null;
+        String addrNumber = null;
+        String addrComplement = null;
+        String addrNeighborhood = null;
+        String addrCity = null;
+        String addrState = null;
+        String addrZipcode = null;
+        
+        // TEMPORÁRIO: Comentado até Lombok funcionar
+        // if (student.getAddress() != null) {
+        //     addrStreet = student.getAddress().getStreet();
+        //     addrNumber = student.getAddress().getNumber();
+        //     addrComplement = student.getAddress().getComplement();
+        //     addrNeighborhood = student.getAddress().getNeighborhood();
+        //     addrCity = student.getAddress().getCity();
+        //     addrState = student.getAddress().getState();
+        //     addrZipcode = student.getAddress().getZipcode();
+        // }
+        
+        // Mapeia contato de emergência do relacionamento EmergencyContacts (pega o de maior prioridade)
+        // TODO: Habilitar quando Lombok estiver gerando os getters corretamente
+        String emergName = null;
+        String emergPhone = null;
+        String emergRelationship = null;
+        
+        // TEMPORÁRIO: Comentado até Lombok funcionar
+        // if (student.getEmergencyContacts() != null && !student.getEmergencyContacts().isEmpty()) {
+        //     var primaryContact = student.getEmergencyContacts().get(0); // Pega o primeiro
+        //     emergName = primaryContact.getFullName();
+        //     emergPhone = primaryContact.getPhone();
+        //     emergRelationship = primaryContact.getRelationship();
+        // }
+        
         return StudentResponseDTO.builder()
                 .id(student.getId())
                 .fullName(student.getFullName())
@@ -62,16 +97,16 @@ public class StudentResponseDTO {
                 .semester(student.getSemester())
                 .enrollmentDate(student.getEnrollmentDate())
                 .status(student.getStatus())
-                .addressStreet(student.getAddressStreet())
-                .addressNumber(student.getAddressNumber())
-                .addressComplement(student.getAddressComplement())
-                .addressNeighborhood(student.getAddressNeighborhood())
-                .addressCity(student.getAddressCity())
-                .addressState(student.getAddressState())
-                .addressZipcode(student.getAddressZipcode())
-                .emergencyContactName(student.getEmergencyContactName())
-                .emergencyContactPhone(student.getEmergencyContactPhone())
-                .emergencyContactRelationship(student.getEmergencyContactRelationship())
+                .addressStreet(addrStreet)
+                .addressNumber(addrNumber)
+                .addressComplement(addrComplement)
+                .addressNeighborhood(addrNeighborhood)
+                .addressCity(addrCity)
+                .addressState(addrState)
+                .addressZipcode(addrZipcode)
+                .emergencyContactName(emergName)
+                .emergencyContactPhone(emergPhone)
+                .emergencyContactRelationship(emergRelationship)
                 .notes(student.getNotes())
                 .createdAt(student.getCreatedAt())
                 .updatedAt(student.getUpdatedAt())

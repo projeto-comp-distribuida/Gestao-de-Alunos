@@ -1,0 +1,18 @@
+# Dockerfile para compilação completa (sem hot reload)
+# Use este para testes quando o hot reload está com problemas
+
+FROM maven:3.9.6-eclipse-temurin-17
+
+WORKDIR /app
+
+# Copia todo o código fonte
+COPY . /app
+
+# Compila a aplicação
+RUN mvn clean package -DskipTests
+
+EXPOSE 8080
+
+# Executa a aplicação
+CMD ["java", "-jar", "target/microservice-template-1.0.0.jar"]
+
