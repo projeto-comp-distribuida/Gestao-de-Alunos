@@ -34,6 +34,9 @@ public class StudentRequestDTO {
     @Past(message = "Data de nascimento deve ser no passado")
     private LocalDate birthDate;
 
+    @NotBlank(message = "Número de matrícula é obrigatório")
+    private String registrationNumber;
+
     @NotBlank(message = "Curso é obrigatório")
     @Size(max = 255, message = "Nome do curso deve ter no máximo 255 caracteres")
     private String course;
@@ -48,19 +51,11 @@ public class StudentRequestDTO {
 
     private StudentStatus status;
 
-    private String addressStreet;
-    private String addressNumber;
-    private String addressComplement;
-    private String addressNeighborhood;
-    private String addressCity;
-    private String addressState;
-
-    @Pattern(regexp = "\\d{8}", message = "CEP deve conter 8 dígitos")
-    private String addressZipcode;
-
-    private String emergencyContactName;
-    private String emergencyContactPhone;
-    private String emergencyContactRelationship;
     private String notes;
+
+    // ==================== NOTA IMPORTANTE ====================
+    // Endereços, Responsáveis, Contatos de Emergência, Documentos, etc
+    // devem ser gerenciados via endpoints específicos após a criação do aluno
+    // Isso mantém a API simples e RESTful
 }
 
