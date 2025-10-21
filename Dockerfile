@@ -47,7 +47,7 @@ LABEL maintainer="DistriSchool Team"
 WORKDIR /app
 
 # Copia o JAR construído
-COPY --from=build /app/target/microservice-template-1.0.0.jar /app/app.jar
+COPY --from=build /app/target/student-management-service-1.0.0.jar /app/app.jar
 
 # Cria usuário não-root para segurança
 RUN addgroup --system app && adduser -S -s /bin/false -G app app
