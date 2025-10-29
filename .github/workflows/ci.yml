@@ -9,7 +9,7 @@ env:
   # Azure Container Registry Configuration
   ACR_NAME: distrischooldevacr
   ACR_LOGIN_SERVER: distrischooldevacr.azurecr.io
-  IMAGE_NAME: microservice-teacher-management-service
+  IMAGE_NAME: microservice-student-management-service
   REGISTRY: distrischooldevacr.azurecr.io
 
 jobs:
