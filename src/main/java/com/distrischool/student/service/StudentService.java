@@ -58,6 +58,7 @@ public class StudentService {
 
         // Validações de negócio
         validateStudentUniqueness(request.getCpf(), request.getEmail(), null);
+        validateStudentData(request);
 
         // Cria a entidade
         Student student = buildStudentFromRequest(request);
@@ -130,6 +131,7 @@ public class StudentService {
 
         // Valida unicidade (exceto para o próprio aluno)
         validateStudentUniqueness(request.getCpf(), request.getEmail(), id);
+        validateStudentData(request);
 
         // Atualiza os campos
         updateStudentFields(student, request);
@@ -270,6 +272,50 @@ public class StudentService {
                 throw new BusinessException("Já existe um aluno cadastrado com o email: " + email);
             }
         });
+    }
+
+    private void validateStudentData(StudentRequestDTO request) {
+        // Data de ingresso não pode ser futura
+        if (request.getEnrollmentDate() != null && request.getEnrollmentDate().isAfter(LocalDate.now())) {
+            throw new BusinessException("Data de ingresso não pode ser no futuro");
+        }
+
+        // CPF válido pelo algoritmo oficial
+        if (request.getCpf() != null && !isValidCpf(request.getCpf())) {
+            throw new BusinessException("CPF inválido");
+        }
+    }
+
+    /**
+     * Valida CPF considerando os dígitos verificadores.
+     * Aceita apenas 11 dígitos e rejeita sequências repetidas.
+     */
+    private boolean isValidCpf(String cpf) {
+        if (cpf == null) return false;
+        String digits = cpf.replaceAll("\\D", "");
+        if (digits.length() != 11) return false;
+
+        // Rejeita sequências do mesmo dígito (ex: 000..., 111..., etc)
+        if (digits.chars().distinct().count() == 1) return false;
+
+        try {
+            int d1 = 0, d2 = 0;
+            for (int i = 0; i < 9; i++) {
+                int num = digits.charAt(i) - '0';
+                d1 += num * (10 - i);
+                d2 += num * (11 - i);
+            }
+            int check1 = d1 % 11;
+            check1 = check1 < 2 ? 0 : 11 - check1;
+
+            d2 += check1 * 2;
+            int check2 = d2 % 11;
+            check2 = check2 < 2 ? 0 : 11 - check2;
+
+            return (digits.charAt(9) - '0') == check1 && (digits.charAt(10) - '0') == check2;
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     private Student buildStudentFromRequest(StudentRequestDTO request) {

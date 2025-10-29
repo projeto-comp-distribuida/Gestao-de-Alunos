@@ -41,3 +41,38 @@ Thumbs.db
 
 ADVANCED_MODEL_IMPROVEMENTS.md
 REFACTORING_SUMMARY.md
+
+# --- Added: Environment files ---
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# --- Added: Spring Boot local overrides and PID ---
+application-local.properties
+application-local.yml
+*.pid
+
+# --- Added: Test/Coverage ---
+/.jacoco/
+jacoco.exec
+/coverage/
+/test-results/
+
+# --- Added: Node/React (Vite) ---
+node_modules/
+/dist/
+/.cache/
+/.vite/
+.vite/
+*.tsbuildinfo
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.eslintcache
+
+# --- Added: Docker/Kubernetes ---
+/docker-compose.override.yml
+/.kube/

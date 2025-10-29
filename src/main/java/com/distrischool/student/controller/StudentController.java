@@ -16,6 +16,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -39,10 +41,12 @@ public class StudentController {
     @Timed(value = "students.create", description = "Time taken to create a student")
     public ResponseEntity<ApiResponse<StudentResponseDTO>> createStudent(
         @Valid @RequestBody StudentRequestDTO request,
-        @RequestHeader(value = "X-User-Id", defaultValue = "system") String userId) {
+        @RequestHeader(value = "X-User-Id", required = false) String userId,
+        @AuthenticationPrincipal Jwt jwt) {
 
-        log.info("Requisição para criar aluno: {}", request.getEmail());
-        StudentResponseDTO student = studentService.createStudent(request, userId);
+        String effectiveUserId = userId != null ? userId : (jwt != null ? jwt.getSubject() : "system");
+        log.info("Requisição para criar aluno: {} (by {})", request.getEmail(), effectiveUserId);
+        StudentResponseDTO student = studentService.createStudent(request, effectiveUserId);
 
         return ResponseEntity
             .status(HttpStatus.CREATED)
@@ -160,10 +164,12 @@ public class StudentController {
     public ResponseEntity<ApiResponse<StudentResponseDTO>> updateStudent(
         @PathVariable Long id,
         @Valid @RequestBody StudentRequestDTO request,
-        @RequestHeader(value = "X-User-Id", defaultValue = "system") String userId) {
+        @RequestHeader(value = "X-User-Id", required = false) String userId,
+        @AuthenticationPrincipal Jwt jwt) {
 
-        log.info("Requisição para atualizar aluno: ID={}", id);
-        StudentResponseDTO student = studentService.updateStudent(id, request, userId);
+        String effectiveUserId = userId != null ? userId : (jwt != null ? jwt.getSubject() : "system");
+        log.info("Requisição para atualizar aluno: ID={} (by {})", id, effectiveUserId);
+        StudentResponseDTO student = studentService.updateStudent(id, request, effectiveUserId);
 
         return ResponseEntity.ok(ApiResponse.success(student, "Aluno atualizado com sucesso"));
     }
@@ -176,10 +182,12 @@ public class StudentController {
     public ResponseEntity<ApiResponse<StudentResponseDTO>> updateStudentStatus(
         @PathVariable Long id,
         @RequestParam StudentStatus status,
-        @RequestHeader(value = "X-User-Id", defaultValue = "system") String userId) {
+        @RequestHeader(value = "X-User-Id", required = false) String userId,
+        @AuthenticationPrincipal Jwt jwt) {
 
-        log.info("Requisição para atualizar status do aluno: ID={}, Status={}", id, status);
-        StudentResponseDTO student = studentService.updateStudentStatus(id, status, userId);
+        String effectiveUserId = userId != null ? userId : (jwt != null ? jwt.getSubject() : "system");
+        log.info("Requisição para atualizar status do aluno: ID={}, Status={} (by {})", id, status, effectiveUserId);
+        StudentResponseDTO student = studentService.updateStudentStatus(id, status, effectiveUserId);
 
         return ResponseEntity.ok(ApiResponse.success(student, "Status do aluno atualizado com sucesso"));
     }
@@ -192,10 +200,12 @@ public class StudentController {
     @Timed(value = "students.delete", description = "Time taken to delete a student")
     public ResponseEntity<ApiResponse<Void>> deleteStudent(
         @PathVariable Long id,
-        @RequestHeader(value = "X-User-Id", defaultValue = "system") String userId) {
+        @RequestHeader(value = "X-User-Id", required = false) String userId,
+        @AuthenticationPrincipal Jwt jwt) {
 
-        log.info("Requisição para deletar aluno: ID={}", id);
-        studentService.deleteStudent(id, userId);
+        String effectiveUserId = userId != null ? userId : (jwt != null ? jwt.getSubject() : "system");
+        log.info("Requisição para deletar aluno: ID={} (by {})", id, effectiveUserId);
+        studentService.deleteStudent(id, effectiveUserId);
 
         return ResponseEntity.ok(ApiResponse.success(null, "Aluno deletado com sucesso"));
     }
@@ -207,10 +217,12 @@ public class StudentController {
     @PostMapping("/{id}/restore")
     public ResponseEntity<ApiResponse<StudentResponseDTO>> restoreStudent(
         @PathVariable Long id,
-        @RequestHeader(value = "X-User-Id", defaultValue = "system") String userId) {
+        @RequestHeader(value = "X-User-Id", required = false) String userId,
+        @AuthenticationPrincipal Jwt jwt) {
 
-        log.info("Requisição para restaurar aluno: ID={}", id);
-        StudentResponseDTO student = studentService.restoreStudent(id, userId);
+        String effectiveUserId = userId != null ? userId : (jwt != null ? jwt.getSubject() : "system");
+        log.info("Requisição para restaurar aluno: ID={} (by {})", id, effectiveUserId);
+        StudentResponseDTO student = studentService.restoreStudent(id, effectiveUserId);
 
         return ResponseEntity.ok(ApiResponse.success(student, "Aluno restaurado com sucesso"));
     }
