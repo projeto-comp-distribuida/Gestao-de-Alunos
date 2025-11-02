@@ -164,6 +164,8 @@ logging:
 microservice:
   name: ${spring.application.name}
   version: 1.0.0
+  auth:
+    url: ${AUTH_SERVICE_URL:http://microservice-auth-dev:8080}
   kafka:
     topics:
       # Tópicos de eventos de alunos

@@ -22,6 +22,7 @@
         <java.version>17</java.version>
         <spring-cloud.version>2023.0.0</spring-cloud.version>
         <lombok.version>1.18.30</lombok.version>
+        <testcontainers.version>1.19.3</testcontainers.version>
     </properties>
 
     <dependencies>
@@ -141,6 +142,23 @@
             <scope>test</scope>
         </dependency>
 
+        <!-- Testcontainers for integration tests -->
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>testcontainers</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>postgresql</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+
         <!-- Security: Protect endpoints with JWT (Auth0) -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -162,6 +180,13 @@
                 <groupId>org.springframework.cloud</groupId>
                 <artifactId>spring-cloud-dependencies</artifactId>
                 <version>${spring-cloud.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.testcontainers</groupId>
+                <artifactId>testcontainers-bom</artifactId>
+                <version>${testcontainers.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>

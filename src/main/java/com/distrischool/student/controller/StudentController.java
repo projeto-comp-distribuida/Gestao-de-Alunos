@@ -36,6 +36,7 @@ public class StudentController {
     /**
      * Cria um novo aluno
      * POST /api/v1/students
+     * Requer role ADMIN
      */
     @PostMapping
     @Timed(value = "students.create", description = "Time taken to create a student")
@@ -44,7 +45,23 @@ public class StudentController {
         @RequestHeader(value = "X-User-Id", required = false) String userId,
         @AuthenticationPrincipal Jwt jwt) {
 
-        String effectiveUserId = userId != null ? userId : (jwt != null ? jwt.getSubject() : "system");
+        String effectiveUserId = userId != null ? userId : (jwt != null ? jwt.getSubject() : null);
+        
+        if (effectiveUserId == null) {
+            return ResponseEntity
+                .status(HttpStatus.UNAUTHORIZED)
+                .body(ApiResponse.error("Usuário não autenticado"));
+        }
+
+        // Verifica se o usuário tem role ADMIN
+        boolean isAdmin = studentService.isAdmin(effectiveUserId);
+        if (!isAdmin) {
+            log.warn("Tentativa de criar aluno sem permissão ADMIN por usuário: {}", effectiveUserId);
+            return ResponseEntity
+                .status(HttpStatus.FORBIDDEN)
+                .body(ApiResponse.error("Apenas usuários com role ADMIN podem criar alunos"));
+        }
+
         log.info("Requisição para criar aluno: {} (by {})", request.getEmail(), effectiveUserId);
         StudentResponseDTO student = studentService.createStudent(request, effectiveUserId);
 

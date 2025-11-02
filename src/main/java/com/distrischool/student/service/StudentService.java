@@ -3,10 +3,14 @@ package com.distrischool.student.service;
 import com.distrischool.student.dto.StudentRequestDTO;
 import com.distrischool.student.dto.StudentResponseDTO;
 import com.distrischool.student.dto.StudentSummaryDTO;
+import com.distrischool.student.dto.auth.ApiResponse;
+import com.distrischool.student.dto.auth.AuthResponse;
+import com.distrischool.student.dto.auth.CreateUserRequest;
 import com.distrischool.student.entity.Student;
 import com.distrischool.student.entity.Student.StudentStatus;
 import com.distrischool.student.exception.BusinessException;
 import com.distrischool.student.exception.ResourceNotFoundException;
+import com.distrischool.student.feign.AuthServiceClient;
 import com.distrischool.student.kafka.DistriSchoolEvent;
 import com.distrischool.student.kafka.EventProducer;
 import com.distrischool.student.repository.StudentRepository;
@@ -35,6 +39,7 @@ public class StudentService {
 
     private final StudentRepository studentRepository;
     private final EventProducer eventProducer;
+    private final AuthServiceClient authServiceClient;
 
     @Value("${microservice.kafka.topics.student-created}")
     private String studentCreatedTopic;
@@ -60,16 +65,20 @@ public class StudentService {
         validateStudentUniqueness(request.getCpf(), request.getEmail(), null);
         validateStudentData(request);
 
+        // Primeiro cria o usuário no serviço de autenticação
+        String auth0Id = createUserInAuthService(request);
+        
         // Cria a entidade
         Student student = buildStudentFromRequest(request);
         student.setRegistrationNumber(generateRegistrationNumber());
+        student.setAuth0Id(auth0Id);
         student.setCreatedBy(createdBy);
         student.setUpdatedBy(createdBy);
 
         // Salva no banco
         Student savedStudent = studentRepository.save(student);
-        log.info("Aluno criado com sucesso: ID={}, Matrícula={}",
-                 savedStudent.getId(), savedStudent.getRegistrationNumber());
+        log.info("Aluno criado com sucesso: ID={}, Matrícula={}, Auth0Id={}",
+                 savedStudent.getId(), savedStudent.getRegistrationNumber(), savedStudent.getAuth0Id());
 
         // Publica evento Kafka
         publishStudentCreatedEvent(savedStudent);
@@ -94,6 +103,7 @@ public class StudentService {
     public StudentResponseDTO getStudentByRegistrationNumber(String registrationNumber) {
         log.debug("Buscando aluno por matrícula: {}", registrationNumber);
         Student student = studentRepository.findByRegistrationNumber(registrationNumber)
+                .filter(s -> !s.isDeleted())
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Aluno não encontrado com matrícula: " + registrationNumber));
         return StudentResponseDTO.fromEntity(student);
@@ -115,7 +125,13 @@ public class StudentService {
             String name, String course, Integer semester, StudentStatus status, Pageable pageable) {
         log.debug("Buscando alunos com filtros - Nome: {}, Curso: {}, Semestre: {}, Status: {}",
                   name, course, semester, status);
-        return studentRepository.findByFilters(name, course, semester, status, pageable)
+        
+        // Normalize null/empty strings: for name, use empty string instead of null to avoid JPQL CONCAT issues
+        // For other parameters, keep null as null
+        String normalizedName = (name == null || name.trim().isEmpty()) ? "" : name;
+        String normalizedCourse = (course != null && course.trim().isEmpty()) ? null : course;
+        
+        return studentRepository.findByFilters(normalizedName, normalizedCourse, semester, status, pageable)
                 .map(StudentSummaryDTO::fromEntity);
     }
 
@@ -250,7 +266,106 @@ public class StudentService {
         return studentRepository.countByCourse(course);
     }
 
+    /**
+     * Verifica se o usuário tem a role ADMIN
+     * Usado para autorização de criação de alunos
+     */
+    public boolean isAdmin(String auth0Id) {
+        try {
+            log.debug("Verificando se usuário {} tem role ADMIN", auth0Id);
+            
+            // Busca usuário por auth0Id
+            ApiResponse<com.distrischool.student.dto.auth.UserResponse> userResponse = 
+                    authServiceClient.getUserByAuth0Id(auth0Id);
+            
+            if (!userResponse.getSuccess() || userResponse.getData() == null) {
+                log.warn("Usuário não encontrado no auth service: {}", auth0Id);
+                return false;
+            }
+            
+            Long userId = userResponse.getData().getId();
+            
+            // Verifica se tem role ADMIN
+            ApiResponse<Boolean> roleResponse = authServiceClient.hasRole(userId, "ADMIN");
+            
+            boolean isAdmin = roleResponse.getSuccess() && 
+                             roleResponse.getData() != null && 
+                             roleResponse.getData();
+            
+            log.debug("Usuário {} é admin: {}", auth0Id, isAdmin);
+            return isAdmin;
+            
+        } catch (Exception e) {
+            log.error("Erro ao verificar role do usuário {}: {}", auth0Id, e.getMessage(), e);
+            return false;
+        }
+    }
+
     // ==================== MÉTODOS PRIVADOS ====================
+
+    /**
+     * Cria um usuário no serviço de autenticação
+     */
+    private String createUserInAuthService(StudentRequestDTO request) {
+        try {
+            log.info("Criando usuário no serviço de autenticação para email: {}", request.getEmail());
+            
+            // Parse full name into first and last name
+            String[] nameParts = parseFullName(request.getFullName());
+            String firstName = nameParts[0];
+            String lastName = nameParts.length > 1 ? nameParts[1] : "";
+            
+            // Cria requisição para o auth service
+            CreateUserRequest createUserRequest = CreateUserRequest.builder()
+                    .email(request.getEmail())
+                    .firstName(firstName)
+                    .lastName(lastName)
+                    .phone(request.getPhone())
+                    .documentNumber(request.getCpf())
+                    .role("STUDENT")
+                    .build();
+            
+            // Chama o auth service
+            ApiResponse<AuthResponse> response = authServiceClient.createUser(createUserRequest);
+            
+            if (response.getSuccess() && response.getData() != null && response.getData().getUser() != null) {
+                String auth0Id = response.getData().getUser().getAuth0Id();
+                log.info("Usuário criado no auth service com Auth0Id: {}", auth0Id);
+                return auth0Id;
+            } else {
+                log.error("Falha ao criar usuário no auth service: {}", response.getMessage());
+                throw new BusinessException("Falha ao criar usuário no serviço de autenticação: " + 
+                        (response.getMessage() != null ? response.getMessage() : "Resposta inválida"));
+            }
+        } catch (BusinessException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("Erro ao criar usuário no auth service: {}", e.getMessage(), e);
+            throw new BusinessException("Erro ao criar usuário no serviço de autenticação: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Parse full name into first and last name
+     */
+    private String[] parseFullName(String fullName) {
+        if (fullName == null || fullName.trim().isEmpty()) {
+            return new String[]{"", ""};
+        }
+        
+        String trimmed = fullName.trim();
+        int lastSpaceIndex = trimmed.lastIndexOf(' ');
+        
+        if (lastSpaceIndex == -1) {
+            // Only one word
+            return new String[]{trimmed, ""};
+        }
+        
+        String firstName = trimmed.substring(0, lastSpaceIndex);
+        String lastName = trimmed.substring(lastSpaceIndex + 1);
+        
+        return new String[]{firstName, lastName};
+    }
 
     private Student findStudentByIdOrThrow(Long id) {
         return studentRepository.findById(id)

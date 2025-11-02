@@ -80,6 +80,13 @@ public class Student extends BaseEntity {
     @Builder.Default
     private StudentStatus status = StudentStatus.ACTIVE;
 
+    /**
+     * Auth0 User ID (vínculo com o serviço de autenticação)
+     * Referência ao usuário criado no auth service quando o aluno é criado
+     */
+    @Column(name = "auth0_id", unique = true, length = 255)
+    private String auth0Id;
+
     // ==================== RELACIONAMENTOS ====================
     
     /**

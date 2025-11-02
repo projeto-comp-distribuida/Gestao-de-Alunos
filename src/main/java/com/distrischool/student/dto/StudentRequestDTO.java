@@ -34,7 +34,7 @@ public class StudentRequestDTO {
     @Past(message = "Data de nascimento deve ser no passado")
     private LocalDate birthDate;
 
-    @NotBlank(message = "Número de matrícula é obrigatório")
+    // Registration number is auto-generated on creation, optional on update
     private String registrationNumber;
 
     @NotBlank(message = "Curso é obrigatório")
