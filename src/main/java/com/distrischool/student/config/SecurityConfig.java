@@ -22,15 +22,18 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.core.convert.converter.Converter;
 import java.util.Collection;
 import java.util.ArrayList;
+import java.util.Map;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.List;
 
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
+@Slf4j
 public class SecurityConfig {
 
     @Value("${spring.security.oauth2.resourceserver.jwt.issuer-uri:}")
@@ -99,9 +102,10 @@ public class SecurityConfig {
     }
 
     /**
-     * Converts JWT claims to Spring Security authorities. Uses standard scope claims
-     * and also maps Auth0 "permissions" array to SCOPE_ authorities so it works
-     * seamlessly with hasAuthority('SCOPE_xxx') checks.
+     * Converts JWT claims to Spring Security authorities. Uses standard scope claims,
+     * maps Auth0 "permissions" array to SCOPE_ authorities, and also maps "roles" 
+     * array to ROLE_ authorities so it works seamlessly with hasAuthority('SCOPE_xxx') 
+     * and hasRole('ADMIN') checks.
      */
     @Bean
     public JwtAuthenticationConverter jwtAuthenticationConverter() {
@@ -110,6 +114,8 @@ public class SecurityConfig {
 
         Converter<Jwt, Collection<GrantedAuthority>> aggregateConverter = jwt -> {
             Collection<GrantedAuthority> authorities = new ArrayList<>(scopesConverter.convert(jwt));
+            
+            // Mapeia permissions do Auth0 para SCOPE_ authorities
             Object permissionsClaim = jwt.getClaims().get("permissions");
             if (permissionsClaim instanceof Collection<?> perms) {
                 for (Object p : perms) {
@@ -118,6 +124,63 @@ public class SecurityConfig {
                     }
                 }
             }
+            
+            // Mapeia roles do Auth0 para ROLE_ authorities
+            Object rolesClaim = jwt.getClaims().get("roles");
+            if (rolesClaim instanceof Collection<?> roles) {
+                for (Object r : roles) {
+                    if (r != null) {
+                        String role = r.toString();
+                        // Adiciona como ROLE_xxx para compatibilidade com hasRole()
+                        if (!role.startsWith("ROLE_")) {
+                            authorities.add(new SimpleGrantedAuthority("ROLE_" + role.toUpperCase()));
+                        } else {
+                            authorities.add(new SimpleGrantedAuthority(role.toUpperCase()));
+                        }
+                    }
+                }
+            }
+            
+            // Também verifica se há roles em formato diferente (ex: https://distrischool.com/roles)
+            // Suporta tanto Collection (array) quanto String (valor único)
+            // Exemplos suportados:
+            // - "https://api.distrischool.com/role": ["ADMIN"]
+            // - "https://api.distrischool.com/role": "ADMIN"
+            var allClaims = jwt.getClaims();
+            for (Map.Entry<String, Object> entry : allClaims.entrySet()) {
+                if (entry.getKey().contains("role")) {
+                    Object roleValue = entry.getValue();
+                    log.debug("Encontrado claim de role: {} = {}", entry.getKey(), roleValue);
+                    
+                    // Caso 1: Role como Collection (array) - ex: "https://api.distrischool.com/role": ["ADMIN"]
+                    if (roleValue instanceof Collection<?> roles) {
+                        log.debug("Processando roles como Collection: {}", roles);
+                        for (Object r : roles) {
+                            if (r != null) {
+                                String role = r.toString();
+                                String authority = !role.startsWith("ROLE_") 
+                                    ? "ROLE_" + role.toUpperCase() 
+                                    : role.toUpperCase();
+                                authorities.add(new SimpleGrantedAuthority(authority));
+                                log.debug("Adicionada authority: {}", authority);
+                            }
+                        }
+                    }
+                    // Caso 2: Role como String (valor único) - ex: "https://api.distrischool.com/role": "ADMIN"
+                    else if (roleValue instanceof String role) {
+                        if (!role.trim().isEmpty()) {
+                            log.debug("Processando role como String: {}", role);
+                            String normalizedRole = role.trim();
+                            String authority = !normalizedRole.startsWith("ROLE_") 
+                                ? "ROLE_" + normalizedRole.toUpperCase() 
+                                : normalizedRole.toUpperCase();
+                            authorities.add(new SimpleGrantedAuthority(authority));
+                            log.debug("Adicionada authority: {}", authority);
+                        }
+                    }
+                }
+            }
+            
             return authorities;
         };
 

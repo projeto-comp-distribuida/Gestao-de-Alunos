@@ -74,7 +74,7 @@ public class StudentController {
      * Busca aluno por ID
      * GET /api/v1/students/{id}
      */
-    @GetMapping("/{id}")
+    @GetMapping("/{id:\\d+}")
     @Timed(value = "students.get", description = "Time taken to get a student")
     public ResponseEntity<ApiResponse<StudentResponseDTO>> getStudentById(@PathVariable Long id) {
         log.info("Requisição para buscar aluno por ID: {}", id);
@@ -176,7 +176,7 @@ public class StudentController {
      * Atualiza um aluno
      * PUT /api/v1/students/{id}
      */
-    @PutMapping("/{id}")
+    @PutMapping("/{id:\\d+}")
     @Timed(value = "students.update", description = "Time taken to update a student")
     public ResponseEntity<ApiResponse<StudentResponseDTO>> updateStudent(
         @PathVariable Long id,
@@ -195,7 +195,7 @@ public class StudentController {
      * Atualiza o status do aluno
      * PATCH /api/v1/students/{id}/status
      */
-    @PatchMapping("/{id}/status")
+    @PatchMapping("/{id:\\d+}/status")
     public ResponseEntity<ApiResponse<StudentResponseDTO>> updateStudentStatus(
         @PathVariable Long id,
         @RequestParam StudentStatus status,
@@ -213,7 +213,7 @@ public class StudentController {
      * Deleta um aluno (soft delete)
      * DELETE /api/v1/students/{id}
      */
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/{id:\\d+}")
     @Timed(value = "students.delete", description = "Time taken to delete a student")
     public ResponseEntity<ApiResponse<Void>> deleteStudent(
         @PathVariable Long id,
@@ -231,7 +231,7 @@ public class StudentController {
      * Restaura um aluno deletado
      * POST /api/v1/students/{id}/restore
      */
-    @PostMapping("/{id}/restore")
+    @PostMapping("/{id:\\d+}/restore")
     public ResponseEntity<ApiResponse<StudentResponseDTO>> restoreStudent(
         @PathVariable Long id,
         @RequestHeader(value = "X-User-Id", required = false) String userId,
