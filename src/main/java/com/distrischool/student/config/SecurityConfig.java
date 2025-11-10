@@ -36,14 +36,57 @@ import java.util.List;
 @Slf4j
 public class SecurityConfig {
 
-    @Value("${spring.security.oauth2.resourceserver.jwt.issuer-uri:}")
-    private String issuerUri;
+    @Value("${AUTH0_DOMAIN:}")
+    private String auth0Domain;
 
-    @Value("${auth0.audience:}")
+    @Value("${AUTH0_ISSUER_URI:}")
+    private String auth0IssuerUri;
+
+    @Value("${spring.security.oauth2.resourceserver.jwt.issuer-uri:}")
+    private String springIssuerUri;
+
+    @Value("${auth0.audience}")
     private String audience;
 
     @Value("${security.disable:false}")
     private boolean securityDisable;
+    
+    /**
+     * Gets the issuer URI, constructing it from AUTH0_DOMAIN if AUTH0_ISSUER_URI is not set
+     * Priority: AUTH0_ISSUER_URI > AUTH0_DOMAIN > spring.security.oauth2.resourceserver.jwt.issuer-uri
+     */
+    private String getIssuerUri() {
+        // First priority: AUTH0_ISSUER_URI environment variable
+        if (auth0IssuerUri != null && !auth0IssuerUri.trim().isEmpty()) {
+            log.debug("Using AUTH0_ISSUER_URI: {}", auth0IssuerUri);
+            return auth0IssuerUri;
+        }
+        // Second priority: Construct from AUTH0_DOMAIN
+        if (auth0Domain != null && !auth0Domain.trim().isEmpty()) {
+            // Ensure domain doesn't have trailing slash or protocol
+            String domain = auth0Domain.trim();
+            if (domain.startsWith("https://")) {
+                domain = domain.substring(8);
+            }
+            if (domain.startsWith("http://")) {
+                domain = domain.substring(7);
+            }
+            if (domain.endsWith("/")) {
+                domain = domain.substring(0, domain.length() - 1);
+            }
+            String issuerUri = "https://" + domain + "/";
+            log.debug("Constructed issuer URI from AUTH0_DOMAIN {}: {}", auth0Domain, issuerUri);
+            return issuerUri;
+        }
+        // Third priority: Use spring property
+        if (springIssuerUri != null && !springIssuerUri.trim().isEmpty()) {
+            log.debug("Using spring.security.oauth2.resourceserver.jwt.issuer-uri: {}", springIssuerUri);
+            return springIssuerUri;
+        }
+        // Fallback
+        log.warn("No Auth0 issuer URI configured. Using default fallback.");
+        return "https://your-tenant.auth0.com/";
+    }
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -72,6 +115,10 @@ public class SecurityConfig {
     @Bean
     @ConditionalOnProperty(name = "security.disable", havingValue = "false", matchIfMissing = true)
     public JwtDecoder jwtDecoder() {
+        String issuerUri = getIssuerUri();
+        log.info("Configuring JWT decoder with issuer URI: {}", issuerUri);
+        log.info("Using Auth0 audience: {}", audience);
+        
         NimbusJwtDecoder jwtDecoder = (NimbusJwtDecoder) JwtDecoders.fromIssuerLocation(issuerUri);
 
         OAuth2TokenValidator<Jwt> withIssuer = JwtValidators.createDefaultWithIssuer(issuerUri);
