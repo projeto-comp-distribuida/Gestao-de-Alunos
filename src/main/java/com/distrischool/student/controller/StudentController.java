@@ -16,6 +16,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
@@ -39,29 +40,15 @@ public class StudentController {
      * Requer role ADMIN
      */
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     @Timed(value = "students.create", description = "Time taken to create a student")
     public ResponseEntity<ApiResponse<StudentResponseDTO>> createStudent(
         @Valid @RequestBody StudentRequestDTO request,
         @RequestHeader(value = "X-User-Id", required = false) String userId,
         @AuthenticationPrincipal Jwt jwt) {
 
-        String effectiveUserId = userId != null ? userId : (jwt != null ? jwt.getSubject() : null);
+        String effectiveUserId = userId != null ? userId : (jwt != null ? jwt.getSubject() : "system");
         
-        if (effectiveUserId == null) {
-            return ResponseEntity
-                .status(HttpStatus.UNAUTHORIZED)
-                .body(ApiResponse.error("Usuário não autenticado"));
-        }
-
-        // Verifica se o usuário tem role ADMIN
-        boolean isAdmin = studentService.isAdmin(effectiveUserId);
-        if (!isAdmin) {
-            log.warn("Tentativa de criar aluno sem permissão ADMIN por usuário: {}", effectiveUserId);
-            return ResponseEntity
-                .status(HttpStatus.FORBIDDEN)
-                .body(ApiResponse.error("Apenas usuários com role ADMIN podem criar alunos"));
-        }
-
         log.info("Requisição para criar aluno: {} (by {})", request.getEmail(), effectiveUserId);
         StudentResponseDTO student = studentService.createStudent(request, effectiveUserId);
 
