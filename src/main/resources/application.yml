@@ -69,6 +69,9 @@ spring:
       retries: 3
 
   # Segurança - OAuth2 Resource Server (Auth0)
+  # O issuer-uri será construído automaticamente pelo SecurityConfig a partir de AUTH0_DOMAIN ou AUTH0_ISSUER_URI
+  # AUTH0_DOMAIN deve ser algo como: dev-lthr3fyfn4x47q1g.us.auth0.com
+  # AUTH0_ISSUER_URI deve ser algo como: https://dev-lthr3fyfn4x47q1g.us.auth0.com/
   security:
     oauth2:
       resourceserver:

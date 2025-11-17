@@ -1,12 +1,16 @@
--- Migration: Adiciona coluna auth0_id à tabela students
--- Descrição: Adiciona o campo auth0_id para vincular alunos ao serviço de autenticação
+-- ===============================================
+-- Migração V5: Adiciona coluna auth0_id na tabela students
+-- Referência ao usuário criado no serviço de autenticação (Auth0)
+-- ===============================================
 
-ALTER TABLE students
-ADD COLUMN IF NOT EXISTS auth0_id VARCHAR(255);
+-- Adiciona coluna auth0_id (nullable, pois pode não existir para alunos criados antes da integração)
+ALTER TABLE students 
+ADD COLUMN auth0_id VARCHAR(255);
 
--- Cria índice único para auth0_id
-CREATE UNIQUE INDEX IF NOT EXISTS idx_student_auth0_id ON students(auth0_id);
+-- Adiciona constraint UNIQUE com nome explícito (cria automaticamente um índice único)
+ALTER TABLE students 
+ADD CONSTRAINT uk_student_auth0_id UNIQUE (auth0_id);
 
 -- Comentário na coluna
-COMMENT ON COLUMN students.auth0_id IS 'Auth0 User ID - vínculo com o serviço de autenticação';
+COMMENT ON COLUMN students.auth0_id IS 'Auth0 User ID - Referência ao usuário criado no serviço de autenticação quando o aluno é criado';
 
