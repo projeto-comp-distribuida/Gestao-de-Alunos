@@ -58,7 +58,7 @@ public class StudentService {
      */
     @Transactional
     @CacheEvict(value = "students", allEntries = true)
-    public StudentResponseDTO createStudent(StudentRequestDTO request, String createdBy) {
+    public StudentResponseDTO createStudent(StudentRequestDTO request, String createdBy, String authorizationHeader) {
         log.info("Criando novo aluno: {}", request.getEmail());
 
         // Validações de negócio
@@ -66,7 +66,7 @@ public class StudentService {
         validateStudentData(request);
 
         // Primeiro cria o usuário no serviço de autenticação
-        String auth0Id = createUserInAuthService(request);
+        String auth0Id = createUserInAuthService(request, authorizationHeader);
         
         // Cria a entidade
         Student student = buildStudentFromRequest(request);
@@ -266,47 +266,12 @@ public class StudentService {
         return studentRepository.countByCourse(course);
     }
 
-    /**
-     * Verifica se o usuário tem a role ADMIN
-     * Usado para autorização de criação de alunos
-     */
-    public boolean isAdmin(String auth0Id) {
-        try {
-            log.debug("Verificando se usuário {} tem role ADMIN", auth0Id);
-            
-            // Busca usuário por auth0Id
-            ApiResponse<com.distrischool.student.dto.auth.UserResponse> userResponse = 
-                    authServiceClient.getUserByAuth0Id(auth0Id);
-            
-            if (!userResponse.getSuccess() || userResponse.getData() == null) {
-                log.warn("Usuário não encontrado no auth service: {}", auth0Id);
-                return false;
-            }
-            
-            Long userId = userResponse.getData().getId();
-            
-            // Verifica se tem role ADMIN
-            ApiResponse<Boolean> roleResponse = authServiceClient.hasRole(userId, "ADMIN");
-            
-            boolean isAdmin = roleResponse.getSuccess() && 
-                             roleResponse.getData() != null && 
-                             roleResponse.getData();
-            
-            log.debug("Usuário {} é admin: {}", auth0Id, isAdmin);
-            return isAdmin;
-            
-        } catch (Exception e) {
-            log.error("Erro ao verificar role do usuário {}: {}", auth0Id, e.getMessage(), e);
-            return false;
-        }
-    }
-
     // ==================== MÉTODOS PRIVADOS ====================
 
     /**
      * Cria um usuário no serviço de autenticação
      */
-    private String createUserInAuthService(StudentRequestDTO request) {
+    private String createUserInAuthService(StudentRequestDTO request, String authorizationHeader) {
         try {
             log.info("Criando usuário no serviço de autenticação para email: {}", request.getEmail());
             
@@ -325,8 +290,12 @@ public class StudentService {
                     .role("STUDENT")
                     .build();
             
+            if (authorizationHeader == null || authorizationHeader.isBlank()) {
+                throw new BusinessException("Token de autorização não enviado para o serviço de autenticação");
+            }
+
             // Chama o auth service
-            ApiResponse<AuthResponse> response = authServiceClient.createUser(createUserRequest);
+            ApiResponse<AuthResponse> response = authServiceClient.createUser(authorizationHeader, createUserRequest);
             
             if (response.getSuccess() && response.getData() != null && response.getData().getUser() != null) {
                 String auth0Id = response.getData().getUser().getAuth0Id();

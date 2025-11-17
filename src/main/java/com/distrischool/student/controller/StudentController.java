@@ -16,6 +16,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
@@ -40,9 +41,11 @@ public class StudentController {
      */
     @PostMapping
     @Timed(value = "students.create", description = "Time taken to create a student")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<StudentResponseDTO>> createStudent(
         @Valid @RequestBody StudentRequestDTO request,
         @RequestHeader(value = "X-User-Id", required = false) String userId,
+        @RequestHeader(value = "Authorization", required = false) String authorization,
         @AuthenticationPrincipal Jwt jwt) {
 
         String effectiveUserId = userId != null ? userId : (jwt != null ? jwt.getSubject() : null);
@@ -53,17 +56,14 @@ public class StudentController {
                 .body(ApiResponse.error("Usuário não autenticado"));
         }
 
-        // Verifica se o usuário tem role ADMIN
-        boolean isAdmin = studentService.isAdmin(effectiveUserId);
-        if (!isAdmin) {
-            log.warn("Tentativa de criar aluno sem permissão ADMIN por usuário: {}", effectiveUserId);
+        if (authorization == null || authorization.isBlank()) {
             return ResponseEntity
-                .status(HttpStatus.FORBIDDEN)
-                .body(ApiResponse.error("Apenas usuários com role ADMIN podem criar alunos"));
+                .status(HttpStatus.UNAUTHORIZED)
+                .body(ApiResponse.error("Token de autorização não fornecido"));
         }
 
         log.info("Requisição para criar aluno: {} (by {})", request.getEmail(), effectiveUserId);
-        StudentResponseDTO student = studentService.createStudent(request, effectiveUserId);
+        StudentResponseDTO student = studentService.createStudent(request, effectiveUserId, authorization);
 
         return ResponseEntity
             .status(HttpStatus.CREATED)

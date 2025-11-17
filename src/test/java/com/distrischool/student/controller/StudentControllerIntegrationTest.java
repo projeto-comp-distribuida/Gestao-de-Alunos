@@ -61,6 +61,8 @@ class StudentControllerIntegrationTest {
     @MockBean
     private EventProducer eventProducer;
 
+    private static final String AUTHORIZATION_HEADER = "Bearer test-token";
+
     private StudentRequestDTO validStudentRequest;
     private com.distrischool.student.dto.auth.ApiResponse<AuthResponse> mockAuthResponse;
 
@@ -98,7 +100,7 @@ class StudentControllerIntegrationTest {
                 .build();
 
         // Mock auth service to return success for user creation
-        when(authServiceClient.createUser(any(CreateUserRequest.class)))
+        when(authServiceClient.createUser(anyString(), any(CreateUserRequest.class)))
                 .thenReturn(mockAuthResponse);
 
         // Mock getUserByAuth0Id - return user response for admin users
@@ -150,7 +152,8 @@ class StudentControllerIntegrationTest {
         mockMvc.perform(post("/api/v1/students")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestBody)
-                        .header("X-User-Id", "auth0|admin123"))
+                        .header("X-User-Id", "auth0|admin123")
+                        .header("Authorization", AUTHORIZATION_HEADER))
                 .andDo(print())
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.success").value(true))
@@ -605,7 +608,8 @@ class StudentControllerIntegrationTest {
         mockMvc.perform(post("/api/v1/students")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestBody)
-                        .header("X-User-Id", "admin123"))
+                        .header("X-User-Id", "admin123")
+                        .header("Authorization", AUTHORIZATION_HEADER))
                 .andDo(print())
                 .andExpect(status().isBadRequest());
     }

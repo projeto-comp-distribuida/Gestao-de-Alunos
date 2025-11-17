@@ -110,6 +110,7 @@ public class SecurityConfig {
 
         Converter<Jwt, Collection<GrantedAuthority>> aggregateConverter = jwt -> {
             Collection<GrantedAuthority> authorities = new ArrayList<>(scopesConverter.convert(jwt));
+
             Object permissionsClaim = jwt.getClaims().get("permissions");
             if (permissionsClaim instanceof Collection<?> perms) {
                 for (Object p : perms) {
@@ -118,6 +119,18 @@ public class SecurityConfig {
                     }
                 }
             }
+
+            Object rolesClaim = jwt.getClaims().get("https://api.distrischool.com/role");
+            if (rolesClaim instanceof Collection<?> roles) {
+                for (Object role : roles) {
+                    if (role != null) {
+                        authorities.add(new SimpleGrantedAuthority("ROLE_" + role.toString().toUpperCase()));
+                    }
+                }
+            } else if (rolesClaim instanceof String role) {
+                authorities.add(new SimpleGrantedAuthority("ROLE_" + role.toUpperCase()));
+            }
+
             return authorities;
         };
 
