@@ -87,7 +87,7 @@ class StudentServiceTest {
                 .success(true)
                 .data(authResponse)
                 .build();
-        when(authServiceClient.createUser(anyString(), any())).thenReturn(apiResponse);
+        when(authServiceClient.registerUser(any(), any())).thenReturn(apiResponse);
     }
 
     @Test

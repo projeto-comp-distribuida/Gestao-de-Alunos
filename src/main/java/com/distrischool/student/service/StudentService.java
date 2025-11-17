@@ -7,9 +7,13 @@ import com.distrischool.student.entity.Student;
 import com.distrischool.student.entity.Student.StudentStatus;
 import com.distrischool.student.exception.BusinessException;
 import com.distrischool.student.exception.ResourceNotFoundException;
+import com.distrischool.student.feign.AuthServiceClient;
 import com.distrischool.student.kafka.DistriSchoolEvent;
 import com.distrischool.student.kafka.EventProducer;
 import com.distrischool.student.repository.StudentRepository;
+import com.distrischool.student.dto.auth.ApiResponse;
+import com.distrischool.student.dto.auth.AuthResponse;
+import com.distrischool.student.dto.auth.RegisterUserRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -23,6 +27,10 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.security.SecureRandom;
 
 /**
  * Service para gerenciamento de alunos
@@ -35,6 +43,7 @@ public class StudentService {
 
     private final StudentRepository studentRepository;
     private final EventProducer eventProducer;
+    private final AuthServiceClient authServiceClient;
 
     @Value("${microservice.kafka.topics.student-created}")
     private String studentCreatedTopic;
@@ -63,8 +72,9 @@ public class StudentService {
         // Cria a entidade
         Student student = buildStudentFromRequest(request);
         student.setRegistrationNumber(generateRegistrationNumber());
-        // auth0Id será definido posteriormente quando o usuário for criado no Auth0
-        student.setAuth0Id(null);
+        // auth0Id será definido após criar o usuário no serviço de auth
+        String auth0Id = createAuthUserForStudent(student, authorizationHeader);
+        student.setAuth0Id(auth0Id);
         student.setCreatedBy(createdBy);
         student.setUpdatedBy(createdBy);
 
@@ -279,6 +289,105 @@ public class StudentService {
         return studentRepository.findById(id)
                 .filter(s -> !s.isDeleted())
                 .orElseThrow(() -> new ResourceNotFoundException("Aluno não encontrado com ID: " + id));
+    }
+
+    private String createAuthUserForStudent(Student student, String authorizationHeader) {
+        try {
+            String password = generateSecurePassword();
+
+            RegisterUserRequest registerUserRequest = RegisterUserRequest.builder()
+                    .email(student.getEmail())
+                    .password(password)
+                    .confirmPassword(password)
+                    .firstName(extractFirstName(student.getFullName()))
+                    .lastName(extractLastName(student.getFullName()))
+                    .phone(student.getPhone())
+                    .documentNumber(student.getCpf())
+                    .roles(Set.of("STUDENT"))
+                    .build();
+
+            ApiResponse<AuthResponse> response = authServiceClient.registerUser(authorizationHeader, registerUserRequest);
+
+            if (response == null) {
+                throw new BusinessException("Serviço de autenticação não respondeu ao registrar o usuário do aluno");
+            }
+
+            if (!Boolean.TRUE.equals(response.getSuccess())) {
+                String message = response.getMessage() != null ? response.getMessage() : "Resposta sem sucesso do serviço de autenticação";
+                throw new BusinessException("Falha ao registrar usuário no Auth0: " + message);
+            }
+
+            AuthResponse data = response.getData();
+            if (data == null || data.getUser() == null) {
+                throw new BusinessException("Serviço de autenticação não retornou os dados do usuário registrado");
+            }
+
+            String auth0Id = data.getUser().getAuth0Id();
+            if (auth0Id == null || auth0Id.isBlank()) {
+                throw new BusinessException("Serviço de autenticação não retornou o Auth0 ID do usuário");
+            }
+
+            log.info("Usuário Auth0 registrado com sucesso para {} - auth0Id={}", student.getEmail(), auth0Id);
+            return auth0Id;
+        } catch (BusinessException ex) {
+            throw ex;
+        } catch (Exception ex) {
+            log.error("Falha ao registrar usuário Auth0 para {}: {}", student.getEmail(), ex.getMessage(), ex);
+            throw new BusinessException("Erro ao registrar usuário no Auth0: " + ex.getMessage());
+        }
+    }
+
+    private String generateSecurePassword() {
+        final String lower = "abcdefghijklmnopqrstuvwxyz";
+        final String upper = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        final String digits = "0123456789";
+        final String special = "@$!%*?&";
+        final String allChars = lower + upper + digits + special;
+        final int length = 12;
+
+        SecureRandom random = new SecureRandom();
+        ArrayList<Character> passwordChars = new ArrayList<>();
+
+        passwordChars.add(lower.charAt(random.nextInt(lower.length())));
+        passwordChars.add(upper.charAt(random.nextInt(upper.length())));
+        passwordChars.add(digits.charAt(random.nextInt(digits.length())));
+        passwordChars.add(special.charAt(random.nextInt(special.length())));
+
+        while (passwordChars.size() < length) {
+            passwordChars.add(allChars.charAt(random.nextInt(allChars.length())));
+        }
+
+        Collections.shuffle(passwordChars, random);
+
+        StringBuilder password = new StringBuilder();
+        for (Character c : passwordChars) {
+            password.append(c);
+        }
+        return password.toString();
+    }
+
+    private String extractFirstName(String fullName) {
+        if (fullName == null || fullName.isBlank()) {
+            return "Student";
+        }
+        String trimmed = fullName.trim();
+        int spaceIndex = trimmed.indexOf(' ');
+        if (spaceIndex == -1) {
+            return trimmed;
+        }
+        return trimmed.substring(0, spaceIndex);
+    }
+
+    private String extractLastName(String fullName) {
+        if (fullName == null || fullName.isBlank()) {
+            return "User";
+        }
+        String trimmed = fullName.trim();
+        int spaceIndex = trimmed.indexOf(' ');
+        if (spaceIndex == -1) {
+            return trimmed;
+        }
+        return trimmed.substring(spaceIndex + 1);
     }
 
     private void validateStudentUniqueness(String cpf, String email, Long excludeId) {

@@ -1,8 +1,9 @@
 package com.distrischool.student.feign;
 
-import com.distrischool.student.dto.auth.CreateUserRequest;
 import com.distrischool.student.dto.auth.ApiResponse;
 import com.distrischool.student.dto.auth.UserResponse;
+import com.distrischool.student.dto.auth.AuthResponse;
+import com.distrischool.student.dto.auth.RegisterUserRequest;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.http.HttpHeaders;
 import org.springframework.web.bind.annotation.*;
@@ -14,13 +15,12 @@ import org.springframework.web.bind.annotation.*;
 public interface AuthServiceClient {
 
     /**
-     * Cria um novo usuário no serviço de autenticação
-     * Endpoint interno para uso entre serviços
+     * Registra um novo usuário no serviço de autenticação (mesmo fluxo dos usuários finais)
      */
-    @PostMapping("/api/v1/auth/internal/users")
-    ApiResponse<com.distrischool.student.dto.auth.AuthResponse> createUser(
-            @RequestHeader(HttpHeaders.AUTHORIZATION) String authorization,
-            @RequestBody CreateUserRequest request);
+    @PostMapping("/api/v1/auth/register")
+    ApiResponse<AuthResponse> registerUser(
+            @RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String authorization,
+            @RequestBody RegisterUserRequest request);
 
     /**
      * Busca um usuário por Auth0 ID

@@ -5,20 +5,24 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.Set;
+
 /**
- * DTO para criar um usuário no serviço de autenticação
- * Usado para comunicação entre serviços
+ * DTO utilizado para registrar usuários no serviço de autenticação,
+ * seguindo o mesmo contrato exposto para os clientes finais.
  */
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class CreateUserRequest {
+public class RegisterUserRequest {
     private String email;
+    private String password;
+    private String confirmPassword;
     private String firstName;
     private String lastName;
     private String phone;
     private String documentNumber;
-    private String role; // ADMIN, TEACHER, STUDENT, PARENT
+    private Set<String> roles;
 }
 

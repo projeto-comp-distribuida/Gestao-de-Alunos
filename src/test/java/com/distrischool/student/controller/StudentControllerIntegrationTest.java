@@ -4,7 +4,6 @@ import com.distrischool.student.StudentServiceApplication;
 import com.distrischool.student.config.TestContainersConfiguration;
 import com.distrischool.student.dto.StudentRequestDTO;
 import com.distrischool.student.dto.auth.AuthResponse;
-import com.distrischool.student.dto.auth.CreateUserRequest;
 import com.distrischool.student.dto.auth.UserResponse;
 import com.distrischool.student.entity.Student;
 import com.distrischool.student.entity.Student.StudentStatus;
@@ -100,7 +99,7 @@ class StudentControllerIntegrationTest {
                 .build();
 
         // Mock auth service to return success for user creation
-        when(authServiceClient.createUser(anyString(), any(CreateUserRequest.class)))
+        when(authServiceClient.registerUser(any(), any()))
                 .thenReturn(mockAuthResponse);
 
         // Mock getUserByAuth0Id - return user response for admin users

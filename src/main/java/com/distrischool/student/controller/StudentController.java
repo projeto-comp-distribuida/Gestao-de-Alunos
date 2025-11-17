@@ -42,7 +42,6 @@ public class StudentController {
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
     @Timed(value = "students.create", description = "Time taken to create a student")
-    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<StudentResponseDTO>> createStudent(
         @Valid @RequestBody StudentRequestDTO request,
         @RequestHeader(value = "X-User-Id", required = false) String userId,
