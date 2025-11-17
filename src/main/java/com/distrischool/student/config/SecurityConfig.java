@@ -161,8 +161,7 @@ public class SecurityConfig {
 
         Converter<Jwt, Collection<GrantedAuthority>> aggregateConverter = jwt -> {
             Collection<GrantedAuthority> authorities = new ArrayList<>(scopesConverter.convert(jwt));
-            
-            // Mapeia permissions do Auth0 para SCOPE_ authorities
+
             Object permissionsClaim = jwt.getClaims().get("permissions");
             if (permissionsClaim instanceof Collection<?> perms) {
                 for (Object p : perms) {

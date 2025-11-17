@@ -2,10 +2,14 @@ package com.distrischool.student.service;
 
 import com.distrischool.student.dto.StudentRequestDTO;
 import com.distrischool.student.dto.StudentResponseDTO;
+import com.distrischool.student.dto.auth.ApiResponse;
+import com.distrischool.student.dto.auth.AuthResponse;
+import com.distrischool.student.dto.auth.UserResponse;
 import com.distrischool.student.entity.Student;
 import com.distrischool.student.entity.Student.StudentStatus;
 import com.distrischool.student.exception.BusinessException;
 import com.distrischool.student.exception.ResourceNotFoundException;
+import com.distrischool.student.feign.AuthServiceClient;
 import com.distrischool.student.kafka.EventProducer;
 import com.distrischool.student.repository.StudentRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -41,6 +45,9 @@ class StudentServiceTest {
     @Mock
     private EventProducer eventProducer;
 
+    @Mock
+    private AuthServiceClient authServiceClient;
+
     @InjectMocks
     private StudentService studentService;
 
@@ -73,6 +80,14 @@ class StudentServiceTest {
                 .enrollmentDate(LocalDate.of(2023, 2, 1))
                 .status(StudentStatus.ACTIVE)
                 .build();
+        AuthResponse authResponse = AuthResponse.builder()
+                .user(UserResponse.builder().auth0Id("auth0|student-123").build())
+                .build();
+        ApiResponse<AuthResponse> apiResponse = ApiResponse.<AuthResponse>builder()
+                .success(true)
+                .data(authResponse)
+                .build();
+        when(authServiceClient.createUser(anyString(), any())).thenReturn(apiResponse);
     }
 
     @Test
@@ -84,7 +99,7 @@ class StudentServiceTest {
         when(studentRepository.save(any(Student.class))).thenReturn(validStudent);
 
         // Act
-        StudentResponseDTO result = studentService.createStudent(validRequest, "admin");
+        StudentResponseDTO result = studentService.createStudent(validRequest, "admin", "Bearer mock-token");
 
         // Assert
         assertThat(result).isNotNull();
@@ -102,7 +117,7 @@ class StudentServiceTest {
                 .thenReturn(Optional.of(validStudent));
 
         // Act & Assert
-        assertThatThrownBy(() -> studentService.createStudent(validRequest, "admin"))
+        assertThatThrownBy(() -> studentService.createStudent(validRequest, "admin", "Bearer mock-token"))
                 .isInstanceOf(BusinessException.class)
                 .hasMessageContaining("CPF");
 
@@ -118,7 +133,7 @@ class StudentServiceTest {
                 .thenReturn(Optional.of(validStudent));
 
         // Act & Assert
-        assertThatThrownBy(() -> studentService.createStudent(validRequest, "admin"))
+        assertThatThrownBy(() -> studentService.createStudent(validRequest, "admin", "Bearer mock-token"))
                 .isInstanceOf(BusinessException.class)
                 .hasMessageContaining("email");
 

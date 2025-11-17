@@ -53,7 +53,7 @@ public class StudentService {
      */
     @Transactional
     @CacheEvict(value = "students", allEntries = true)
-    public StudentResponseDTO createStudent(StudentRequestDTO request, String createdBy) {
+    public StudentResponseDTO createStudent(StudentRequestDTO request, String createdBy, String authorizationHeader) {
         log.info("Criando novo aluno: {}", request.getEmail());
 
         // Validações de negócio

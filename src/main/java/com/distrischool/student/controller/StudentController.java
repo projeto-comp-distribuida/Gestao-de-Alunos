@@ -42,15 +42,17 @@ public class StudentController {
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
     @Timed(value = "students.create", description = "Time taken to create a student")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<StudentResponseDTO>> createStudent(
         @Valid @RequestBody StudentRequestDTO request,
         @RequestHeader(value = "X-User-Id", required = false) String userId,
+        @RequestHeader(value = "Authorization", required = false) String authorization,
         @AuthenticationPrincipal Jwt jwt) {
 
         String effectiveUserId = userId != null ? userId : (jwt != null ? jwt.getSubject() : "system");
         
         log.info("Requisição para criar aluno: {} (by {})", request.getEmail(), effectiveUserId);
-        StudentResponseDTO student = studentService.createStudent(request, effectiveUserId);
+        StudentResponseDTO student = studentService.createStudent(request, effectiveUserId, authorization);
 
         return ResponseEntity
             .status(HttpStatus.CREATED)

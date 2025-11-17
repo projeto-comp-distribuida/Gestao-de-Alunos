@@ -3,56 +3,54 @@ spring:
   application:
     name: student-management-service-test
   
-  # Database configuration will be overridden by Testcontainers
+  # Configuração do DataSource (H2 para testes)
   datasource:
-    url: jdbc:postgresql://localhost:5432/test_students
-    username: test
-    password: test
-    driver-class-name: org.postgresql.Driver
+    url: jdbc:h2:mem:testdb
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: 
   
-  # JPA configuration for tests
+  # JPA sem criar tabelas
   jpa:
     hibernate:
-      ddl-auto: update
-    show-sql: true
+      ddl-auto: none
+    show-sql: false
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect
-        format_sql: true
+        dialect: org.hibernate.dialect.H2Dialect
   
-  # Flyway - disable for tests if using JPA auto-update
-  flyway:
-    enabled: false
+  # Kafka - usar EmbeddedKafka para testes
+  kafka:
+    bootstrap-servers: ${spring.embedded.kafka.brokers:localhost:9092}
+    consumer:
+      group-id: test-group
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: '*'
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
   
-  # Redis - disable cache for tests
+  # Redis desabilitado para testes
   data:
     redis:
       host: localhost
       port: 6379
-  cache:
-    type: none
   
-  # Kafka - use embedded Kafka for tests
-  kafka:
-    bootstrap-servers: ${spring.embedded.kafka.brokers:localhost:9092}
-  
-  # Security - disable for integration tests
-  
-  autoconfigure:
-    exclude:
-      - org.springframework.cloud.netflix.eureka.EurekaClientAutoConfiguration
-      - org.springframework.boot.autoconfigure.security.oauth2.resource.servlet.OAuth2ResourceServerAutoConfiguration
-      - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
+  # Flyway desabilitado para testes
+  flyway:
+    enabled: false
 
-# Disable security for integration tests
-security:
-  disable: true
+# Server port para testes
+server:
+  port: 0
 
 # Logging
 logging:
   level:
-    com.distrischool: DEBUG
-    org.springframework: INFO
-    org.hibernate: INFO
-    org.testcontainers: INFO
+    com.distrischool.student: INFO
+    org.springframework.kafka: INFO
+    org.springframework: WARN
 
