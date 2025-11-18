@@ -21,6 +21,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -265,5 +266,18 @@ public class StudentController {
         log.info("Requisição para contar alunos por curso: {}", course);
         long count = studentService.countStudentsByCourse(course);
         return ResponseEntity.ok(ApiResponse.success(count));
+    }
+
+    /**
+     * Busca múltiplos alunos por IDs (validação em lote)
+     * POST /api/v1/students/batch
+     */
+    @PostMapping("/batch")
+    @Timed(value = "students.batch", description = "Time taken to get multiple students by IDs")
+    public ResponseEntity<ApiResponse<List<Map<String, Object>>>> getStudentsByIds(
+            @RequestBody List<Long> studentIds) {
+        log.info("Requisição para buscar múltiplos alunos por IDs: {}", studentIds);
+        List<Map<String, Object>> students = studentService.getStudentsByIds(studentIds);
+        return ResponseEntity.ok(ApiResponse.success(students));
     }
 }

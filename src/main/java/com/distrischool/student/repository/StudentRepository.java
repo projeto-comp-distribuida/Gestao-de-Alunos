@@ -57,5 +57,11 @@ public interface StudentRepository extends JpaRepository<Student, Long> {
         @Param("status") StudentStatus status,
         Pageable pageable
     );
+
+    /**
+     * Busca múltiplos estudantes por IDs, excluindo os deletados
+     */
+    @Query("SELECT s FROM Student s WHERE s.id IN :ids AND s.deletedAt IS NULL")
+    List<Student> findByIdsNotDeleted(@Param("ids") List<Long> ids);
 }
 

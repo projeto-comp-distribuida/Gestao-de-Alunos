@@ -270,6 +270,62 @@ public class StudentService {
     }
 
     /**
+     * Busca múltiplos alunos por IDs (validação em lote)
+     * Retorna uma lista de Maps com os dados dos estudantes
+     */
+    public List<Map<String, Object>> getStudentsByIds(List<Long> studentIds) {
+        log.debug("Buscando múltiplos alunos por IDs: {}", studentIds);
+        
+        if (studentIds == null || studentIds.isEmpty()) {
+            return List.of();
+        }
+        
+        List<Student> students = studentRepository.findByIdsNotDeleted(studentIds);
+        
+        return students.stream()
+                .map(student -> {
+                    StudentResponseDTO dto = StudentResponseDTO.fromEntity(student);
+                    return convertDtoToMap(dto);
+                })
+                .toList();
+    }
+
+    /**
+     * Converte StudentResponseDTO para Map<String, Object>
+     */
+    private Map<String, Object> convertDtoToMap(StudentResponseDTO dto) {
+        Map<String, Object> map = new HashMap<>();
+        map.put("id", dto.getId());
+        map.put("fullName", dto.getFullName());
+        map.put("cpf", dto.getCpf());
+        map.put("email", dto.getEmail());
+        map.put("phone", dto.getPhone());
+        map.put("birthDate", dto.getBirthDate());
+        map.put("age", dto.getAge());
+        map.put("registrationNumber", dto.getRegistrationNumber());
+        map.put("course", dto.getCourse());
+        map.put("semester", dto.getSemester());
+        map.put("enrollmentDate", dto.getEnrollmentDate());
+        map.put("status", dto.getStatus() != null ? dto.getStatus().toString() : null);
+        map.put("addressStreet", dto.getAddressStreet());
+        map.put("addressNumber", dto.getAddressNumber());
+        map.put("addressComplement", dto.getAddressComplement());
+        map.put("addressNeighborhood", dto.getAddressNeighborhood());
+        map.put("addressCity", dto.getAddressCity());
+        map.put("addressState", dto.getAddressState());
+        map.put("addressZipcode", dto.getAddressZipcode());
+        map.put("emergencyContactName", dto.getEmergencyContactName());
+        map.put("emergencyContactPhone", dto.getEmergencyContactPhone());
+        map.put("emergencyContactRelationship", dto.getEmergencyContactRelationship());
+        map.put("notes", dto.getNotes());
+        map.put("createdAt", dto.getCreatedAt());
+        map.put("updatedAt", dto.getUpdatedAt());
+        map.put("createdBy", dto.getCreatedBy());
+        map.put("updatedBy", dto.getUpdatedBy());
+        return map;
+    }
+
+    /**
      * Verifica se o usuário tem a role ADMIN
      * @deprecated Use Spring Security @PreAuthorize("hasRole('ADMIN')") instead
      * A verificação de role agora é feita diretamente do JWT token via Spring Security
