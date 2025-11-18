@@ -271,13 +271,26 @@ public class StudentController {
     /**
      * Busca múltiplos alunos por IDs (validação em lote)
      * POST /api/v1/students/batch
+     * 
+     * Este endpoint é usado por outros microserviços para validar a existência de estudantes.
+     * Retorna uma lista de Maps com os dados dos estudantes encontrados.
+     * 
+     * @param studentIds Lista de IDs dos estudantes a serem buscados
+     * @return Lista de Maps contendo os dados dos estudantes encontrados
      */
     @PostMapping("/batch")
     @Timed(value = "students.batch", description = "Time taken to get multiple students by IDs")
     public ResponseEntity<ApiResponse<List<Map<String, Object>>>> getStudentsByIds(
-            @RequestBody List<Long> studentIds) {
+            @RequestBody(required = false) List<Long> studentIds) {
         log.info("Requisição para buscar múltiplos alunos por IDs: {}", studentIds);
+        
+        if (studentIds == null || studentIds.isEmpty()) {
+            log.warn("Lista de IDs vazia ou nula recebida");
+            return ResponseEntity.ok(ApiResponse.success(List.of(), "Nenhum ID fornecido"));
+        }
+        
         List<Map<String, Object>> students = studentService.getStudentsByIds(studentIds);
+        log.info("Encontrados {} estudantes de {} IDs solicitados", students.size(), studentIds.size());
         return ResponseEntity.ok(ApiResponse.success(students));
     }
 }
