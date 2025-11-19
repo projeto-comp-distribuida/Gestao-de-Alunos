@@ -43,6 +43,12 @@ spring:
           max-idle: 8
           min-idle: 0
           max-wait: -1ms
+  
+  # Configuração de Cache - desabilita auto-configuração para usar nossa configuração customizada
+  cache:
+    type: redis
+    redis:
+      time-to-live: 600000 # 10 minutos em milissegundos
 
   # Configuração do Flyway
   flyway:
