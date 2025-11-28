@@ -293,4 +293,30 @@ public class StudentController {
         log.info("Encontrados {} estudantes de {} IDs solicitados", students.size(), studentIds.size());
         return ResponseEntity.ok(ApiResponse.success(students));
     }
+
+    /**
+     * Busca aluno por Auth0 ID
+     * GET /api/v1/students/by-auth0/{auth0Id}
+     * 
+     * Este endpoint é usado pelo serviço de autenticação para obter o ID do aluno
+     * associado a um Auth0 ID. Retorna apenas o ID do aluno ou 404 se não encontrado.
+     * 
+     * @param auth0Id Auth0 ID do usuário
+     * @return ID do aluno ou 404 se não encontrado
+     */
+    @GetMapping("/by-auth0/{auth0Id}")
+    @Timed(value = "students.getByAuth0Id", description = "Time taken to get student ID by Auth0 ID")
+    public ResponseEntity<ApiResponse<Map<String, Long>>> getStudentIdByAuth0Id(@PathVariable String auth0Id) {
+        log.info("Requisição para buscar aluno por Auth0 ID: {}", auth0Id);
+        
+        Long studentId = studentService.getStudentIdByAuth0Id(auth0Id);
+        
+        if (studentId == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(ApiResponse.error("Aluno não encontrado para o Auth0 ID fornecido"));
+        }
+        
+        Map<String, Long> response = Map.of("id", studentId);
+        return ResponseEntity.ok(ApiResponse.success(response, "Aluno encontrado"));
+    }
 }

@@ -114,6 +114,18 @@ public class StudentService {
     }
 
     /**
+     * Busca aluno por Auth0 ID
+     * Retorna apenas o ID do aluno se encontrado, null caso contrário
+     */
+    public Long getStudentIdByAuth0Id(String auth0Id) {
+        log.debug("Buscando aluno por Auth0 ID: {}", auth0Id);
+        return studentRepository.findByAuth0Id(auth0Id)
+                .filter(s -> !s.isDeleted())
+                .map(Student::getId)
+                .orElse(null);
+    }
+
+    /**
      * Lista todos os alunos com paginação
      */
     public Page<StudentSummaryDTO> getAllStudents(Pageable pageable) {

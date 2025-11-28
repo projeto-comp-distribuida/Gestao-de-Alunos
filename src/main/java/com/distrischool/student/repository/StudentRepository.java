@@ -63,5 +63,10 @@ public interface StudentRepository extends JpaRepository<Student, Long> {
      */
     @Query("SELECT s FROM Student s WHERE s.id IN :ids AND s.deletedAt IS NULL")
     List<Student> findByIdsNotDeleted(@Param("ids") List<Long> ids);
+
+    /**
+     * Busca estudante por Auth0 ID
+     */
+    Optional<Student> findByAuth0Id(String auth0Id);
 }
 
